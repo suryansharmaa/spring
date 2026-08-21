@@ -44,4 +44,28 @@ public class OrderService {
 
         return orderModels;
     }
+
+    @Transactional
+    public @Nullable OrderModel updateOrder(CreateOrderModel updateOrderModel, Long userId, Long orderId) {
+        Orders order = orderRepository.findById(orderId).orElseThrow();
+        order.setProductName(updateOrderModel.getProductName());
+
+        if (!order.getUser().getId().equals(userId)) {
+            return null;
+        }
+
+        return new OrderModel(order.getId(), order.getProductName(), new UserModel(
+                order.getUser().getId(), order.getUser().getName(), order.getUser().getEmail()
+        ));
+    }
+
+    public boolean deleteOrder(Long userId, Long orderId) {
+        Orders order = orderRepository.findById(orderId).orElseThrow();
+        if (!order.getUser().getId().equals(userId)) {
+            return false;
+        }
+
+        orderRepository.delete(order);
+        return true;
+    }
 }
