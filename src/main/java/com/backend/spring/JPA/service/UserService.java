@@ -1,6 +1,7 @@
 package com.backend.spring.JPA.service;
 
 import com.backend.spring.JPA.entities.Users;
+import com.backend.spring.JPA.exception.UserNotFoundException;
 import com.backend.spring.JPA.model.CreateUserModel;
 import com.backend.spring.JPA.model.UserModel;
 import com.backend.spring.JPA.repository.UserRepository;
@@ -44,7 +45,8 @@ public class UserService {
 
 
     public UserModel getUserById(Long id) {
-        Users user = userRepository.findById(id).orElseThrow();
+        Users user = userRepository.findById(id).
+                orElseThrow(() -> new UserNotFoundException("User not found with Id : " + id));
         return new UserModel(user.getId(), user.getName(), user.getEmail());
     }
 
