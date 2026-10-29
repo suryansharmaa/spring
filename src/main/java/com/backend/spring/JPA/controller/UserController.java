@@ -3,6 +3,7 @@ package com.backend.spring.JPA.controller;
 import com.backend.spring.JPA.model.CreateUserModel;
 import com.backend.spring.JPA.model.UserModel;
 import com.backend.spring.JPA.service.UserService;
+import jakarta.validation.Valid;
 import lombok.AllArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,7 +18,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    public ResponseEntity<UserModel> createUser(@RequestBody CreateUserModel createUserModel) {
+    public ResponseEntity<UserModel> createUser(@Valid @RequestBody CreateUserModel createUserModel) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(createUserModel));
     }
 
