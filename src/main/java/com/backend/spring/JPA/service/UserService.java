@@ -44,9 +44,9 @@ public class UserService {
     }
 
 
-    public UserModel getUserById(Long id) {
-        Users user = userRepository.findById(id).
-                orElseThrow(() -> new UserNotFoundException("User not found with Id : " + id));
+    public UserModel getUserById(Long userId) {
+        Users user = userRepository.findById(userId).
+                orElseThrow(() -> new UserNotFoundException(userId));
         return new UserModel(user.getId(), user.getName(), user.getEmail());
     }
 

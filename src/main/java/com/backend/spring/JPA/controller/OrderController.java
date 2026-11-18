@@ -17,13 +17,13 @@ public class OrderController {
     private final OrderService orderService;
 
     @PostMapping
-    public ResponseEntity<OrderModel> createOrders(@RequestBody CreateOrderModel createOrderModel, @PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrders(createOrderModel, id));
+    public ResponseEntity<OrderModel> createOrders(@RequestBody CreateOrderModel createOrderModel, @PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.createOrders(createOrderModel, userId));
     }
 
     @GetMapping
-    public ResponseEntity<List<OrderModel>> getOrdersById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(orderService.getOrdersById(id));
+    public ResponseEntity<List<OrderModel>> getOrdersById(@PathVariable Long userId) {
+        return ResponseEntity.status(HttpStatus.OK).body(orderService.getOrdersById(userId));
     }
 
     @PutMapping("/{orderId}")
