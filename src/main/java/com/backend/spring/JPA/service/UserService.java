@@ -7,28 +7,32 @@ import com.backend.spring.JPA.model.UserModel;
 import com.backend.spring.JPA.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
-import org.jspecify.annotations.Nullable;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
 public class UserService {
     private final UserRepository userRepository;
 
-    public UserModel saveUser(CreateUserModel createUserModel) {
-        Users user = new Users();
-        user.setEmail(createUserModel.getEmail());
-        user.setName(createUserModel.getName());
+    private UserModel map(Users user) {
+        return new UserModel(user.getId(), user.getName(), user.getEmail());
+    }
 
-        Users savedUser = userRepository.save(user);
-        return new UserModel(savedUser.getId(), savedUser.getName(), savedUser.getEmail());
+    private Users getLoggedInUser() {
+        String email = Objects.requireNonNull(SecurityContextHolder.getContext()
+                .getAuthentication()).getName();
+
+        return userRepository.findByEmail(email).orElseThrow();
+    }
+
+    public UserModel getCurrentUser() {
+        Users user = getLoggedInUser();
+        return map(user);
     }
 
     public List<UserModel> getAllUsers() {
@@ -36,7 +40,7 @@ public class UserService {
 
         List<UserModel> userList = new ArrayList<>();
         for (Users user : users) {
-            UserModel userModel = new UserModel(user.getId(), user.getName(), user.getEmail());
+            UserModel userModel = map(user);
             userList.add(userModel);
         }
 
@@ -47,43 +51,21 @@ public class UserService {
     public UserModel getUserById(Long userId) {
         Users user = userRepository.findById(userId).
                 orElseThrow(() -> new UserNotFoundException(userId));
-        return new UserModel(user.getId(), user.getName(), user.getEmail());
+        return map(user);
     }
 
-    @Transactional
-    public UserModel updateUserId(CreateUserModel updateUserModel, Long id) {
-        Users user = userRepository.findById(id).orElseThrow();
-        user.setName(updateUserModel.getName());
-        user.setEmail(updateUserModel.getEmail());
-
-        // no save() required, dirty checking + @Transactional
-
-        return new UserModel(user.getId(), user.getName(), user.getEmail());
-    }
-
-    public UserModel patchUserId(CreateUserModel patchUserModel, Long id) {
-        Users user = userRepository.findById(id).orElseThrow();
-        if (patchUserModel.getEmail() != null) user.setEmail(patchUserModel.getEmail());
-        if (patchUserModel.getName() != null) user.setName(patchUserModel.getName());
-
-        return new UserModel(user.getId(), user.getName(), user.getEmail());
-    }
 
     public void deleteUserById(Long id) {
         userRepository.deleteById(id);
     }
 
-    public List<UserModel> getAllUsersPaginated(int page, int pageSize, String direction, String sortBy) {
-        Sort sort;
-        sort = direction.equalsIgnoreCase("asc") ? Sort.by(sortBy).ascending() :
-                Sort.by(sortBy).descending();
+    @Transactional
+    public UserModel updateCurrentUser(CreateUserModel createUserModel) {
+        Users user = getLoggedInUser();
 
-        Pageable pageable = PageRequest.of(page, pageSize, sort);
-        Page<Users> usersPage = userRepository.findAll(pageable);
+        user.setName(createUserModel.getName());
+        user.setEmail(createUserModel.getEmail());
 
-        List<UserModel> userList = new ArrayList<>();
-        usersPage.forEach(user -> userList.add(new UserModel(user.getId(), user.getName(), user.getEmail())));
-
-        return userList;
+        return map(user);
     }
 }

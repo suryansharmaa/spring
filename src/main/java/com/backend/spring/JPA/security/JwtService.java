@@ -1,5 +1,6 @@
 package com.backend.spring.JPA.security;
 
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,5 +27,12 @@ public class JwtService {
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 15))
                 .signWith(getKey())
                 .compact();
+    }
+
+    public Claims parseToken(String token) {
+        return Jwts.parser().verifyWith(getKey())
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 }

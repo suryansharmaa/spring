@@ -17,37 +17,34 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
+    // User -> own profile
+    @GetMapping("/me")
+    public ResponseEntity<UserModel> getMe() {
+        return ResponseEntity.status(HttpStatus.OK).body(userService.getCurrentUser());
+    }
+
+    @PutMapping("/me")
+    public ResponseEntity<UserModel> updateMe(@RequestBody CreateUserModel createUserModel) {
+        return ResponseEntity.ok(userService.updateCurrentUser(createUserModel));
+    }
+
+    // Admin -> all users
     @GetMapping
-    public ResponseEntity<List<UserModel>> getAllUsers() {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers());
+    public ResponseEntity<List<UserModel>> getUsers() {
+        return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping("/page")
-    public ResponseEntity<List<UserModel>> getAllUsersPaginated(@RequestParam int page, @RequestParam int pageSize,
-                                                                @RequestParam(defaultValue = "asc") String direction,
-                                                                @RequestParam(defaultValue = "name") String sortBy) {
-
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsersPaginated(page, pageSize, direction, sortBy));
+    // Admin -> specific user
+    @GetMapping("/{userId}")
+    public ResponseEntity<UserModel> getUser(@PathVariable Long userId) {
+        return ResponseEntity.ok(userService.getUserById(userId));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<UserModel> getUserById(@PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.getUserById(id));
+    //Admin -> delete
+    @DeleteMapping("/{userId}")
+    public ResponseEntity<Void> deleteUser(@PathVariable Long userId) {
+        userService.deleteUserById(userId);
+        return ResponseEntity.noContent().build();
     }
 
-    @PutMapping("/{id}")
-    public ResponseEntity<UserModel> updateUserId(@RequestBody CreateUserModel updateUserModel, @PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.updateUserId(updateUserModel, id));
-    }
-
-    @PatchMapping("/{id}")
-    public ResponseEntity<UserModel> patchUserId(@RequestBody CreateUserModel patchUserModel, @PathVariable Long id) {
-        return ResponseEntity.status(HttpStatus.OK).body(userService.patchUserId(patchUserModel, id));
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteUserById(@PathVariable Long id) {
-        userService.deleteUserById(id);
-        return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
-    }
 }

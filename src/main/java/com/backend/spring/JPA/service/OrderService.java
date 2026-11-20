@@ -2,6 +2,7 @@ package com.backend.spring.JPA.service;
 
 import com.backend.spring.JPA.entities.Orders;
 import com.backend.spring.JPA.entities.Users;
+import com.backend.spring.JPA.exception.UserNotFoundException;
 import com.backend.spring.JPA.model.CreateOrderModel;
 import com.backend.spring.JPA.model.OrderModel;
 import com.backend.spring.JPA.model.UserModel;
@@ -9,11 +10,14 @@ import com.backend.spring.JPA.repository.OrderRepository;
 import com.backend.spring.JPA.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import lombok.AllArgsConstructor;
+import org.hibernate.query.Order;
 import org.jspecify.annotations.Nullable;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @AllArgsConstructor
@@ -21,28 +25,55 @@ public class OrderService {
     private final OrderRepository orderRepository;
     private final UserRepository userRepository;
 
+    private Users getLoggedInUser() {
+        String email = Objects.requireNonNull(SecurityContextHolder.getContext()
+                .getAuthentication())
+                .getName();
+
+        return userRepository.findByEmail(email).orElseThrow(() -> new RuntimeException("User not found"));
+    }
+
+    private OrderModel map(Orders order) {
+        Users u = order.getUser();
+
+        return new OrderModel(
+                order.getId(),
+                order.getProductName(),
+                new UserModel(u.getId(), u.getName(), u.getEmail())
+        );
+    }
+
     @Transactional
-    public OrderModel createOrders(CreateOrderModel createOrderModel, Long id) {
-        Users user = userRepository.findById(id).orElseThrow();
+    public OrderModel createOrders(CreateOrderModel createOrderModel) {
+        Users user = getLoggedInUser();
+
         Orders order = new Orders();
         order.setUser(user);
         order.setProductName(createOrderModel.getProductName());
 
         Orders savedOrder = orderRepository.save(order);
-        return new OrderModel(savedOrder.getId(), savedOrder.getProductName(),
-                new UserModel(savedOrder.getUser().getId(), savedOrder.getUser().getName(), savedOrder.getUser().getEmail()));
+
+        return map(savedOrder);
     }
 
-    public List<OrderModel> getOrdersById(Long id) {
-        List<Orders> ordersList = orderRepository.findByUserId(id);
-        List<OrderModel> orderModels = new ArrayList<>();
-        ordersList.forEach(orders -> {
-            OrderModel orderModel = new OrderModel(orders.getId(), orders.getProductName(),
-                    new UserModel(orders.getUser().getId(), orders.getUser().getName(), orders.getUser().getEmail()));
-            orderModels.add(orderModel);
-        });
+    public List<OrderModel> getOrdersById() {
+        Users user = getLoggedInUser();
 
-        return orderModels;
+        return orderRepository.findByUserId(user.getId())
+                .stream()
+                .map(this::map)
+                .toList();
+    }
+
+    public OrderModel getOrdersById(Long orderId) {
+
+        Users user = getLoggedInUser();
+
+        Orders order = orderRepository.findByIdAndUserId(
+                orderId, user.getId()
+        ).orElseThrow(() -> new RuntimeException("Order not found"));
+
+        return map(order);
     }
 
     @Transactional
@@ -59,13 +90,21 @@ public class OrderService {
         ));
     }
 
-    public boolean deleteOrder(Long userId, Long orderId) {
-        Orders order = orderRepository.findById(orderId).orElseThrow();
-        if (!order.getUser().getId().equals(userId)) {
-            return false;
-        }
+    public void deleteOrder(Long orderId) {
+        orderRepository.deleteById(orderId);
+    }
 
-        orderRepository.delete(order);
-        return true;
+    public List<OrderModel> getAllOrders() {
+        return orderRepository.findAll()
+                .stream()
+                .map(this::map)
+                .toList();
+    }
+
+    public List<OrderModel> getOrderByUser(Long userId) {
+        return orderRepository.findByUserId(userId)
+                .stream()
+                .map(this::map)
+                .toList();
     }
 }
