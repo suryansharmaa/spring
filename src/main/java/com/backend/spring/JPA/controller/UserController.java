@@ -17,11 +17,6 @@ import java.util.List;
 public class UserController {
     private final UserService userService;
 
-    @PostMapping
-    public ResponseEntity<UserModel> createUser(@Valid @RequestBody CreateUserModel createUserModel) {
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.saveUser(createUserModel));
-    }
-
     @GetMapping
     public ResponseEntity<List<UserModel>> getAllUsers() {
         return ResponseEntity.status(HttpStatus.OK).body(userService.getAllUsers());
